@@ -1,15 +1,18 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden p-8 border border-gray-100/50 backdrop-blur-sm bg-opacity-90">
+<div class="max-w-6xl mx-auto bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl shadow-2xl overflow-hidden p-8 border border-gray-700/50 backdrop-blur-sm bg-opacity-90">
+    <!-- Header Section -->
     <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center bg-green-100/20 p-3 rounded-full mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <div class="inline-flex items-center justify-center bg-green-900/20 p-3 rounded-full mb-4 border border-green-800/30">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5H4m0 0l4 4m-4-4l4-4" />
             </svg>
         </div>
-        <h2 class="text-3xl font-bold text-gray-800">SQL Interface</h2>
-        <div class="mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
+        <h2 class="text-3xl font-bold text-white">
+            <span class="bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-green-300">SQL Interface</span>
+        </h2>
+        <div class="mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-800 text-green-400 border border-gray-700">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
             </svg>
@@ -17,21 +20,22 @@
         </div>
     </div>
 
+    <!-- SQL Query Form -->
     <form method="POST" class="space-y-5">
         <div class="relative">
-            <label for="sql_query" class="block text-sm font-medium text-gray-700 mb-2">SQL Query</label>
+            <label for="sql_query" class="block text-sm font-medium text-gray-300 mb-2">SQL Query</label>
             <div class="relative">
                 <textarea id="sql_query" name="sql_query" rows="5" required spellcheck="false"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 font-mono text-sm bg-gray-50/50 shadow-sm"
+                    class="w-full px-4 py-3 border border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 font-mono text-sm bg-gray-800/50 text-gray-100 shadow-sm"
                     placeholder="SELECT * FROM table_name;">{{ query }}</textarea>
                 <div class="absolute bottom-3 right-3 flex space-x-2">
-                    <button type="button" onclick="formatSQL()" class="p-1.5 rounded-md bg-gray-200 hover:bg-gray-300 transition-colors duration-200" title="Format SQL">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <button type="button" onclick="formatSQL()" class="p-1.5 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors duration-200" title="Format SQL">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
                         </svg>
                     </button>
-                    <button type="button" onclick="clearQuery()" class="p-1.5 rounded-md bg-gray-200 hover:bg-gray-300 transition-colors duration-200" title="Clear">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <button type="button" onclick="clearQuery()" class="p-1.5 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors duration-200" title="Clear">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                     </button>
@@ -39,19 +43,20 @@
             </div>
         </div>
         
-        <button type="submit" class="w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <button type="submit" class="w-full flex items-center justify-center px-6 py-3.5 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-300 group">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
             </svg>
-            Execute Query
+            <span class="group-hover:translate-x-1 transition-transform duration-300">Execute Query</span>
         </button>
     </form>
     
+    <!-- Message Display -->
     {% if message %}
-    <div class="mt-6 p-4 rounded-xl border-l-4 {% if 'Error' in message %}border-red-500 bg-red-50 text-red-800{% else %}border-blue-500 bg-blue-50 text-blue-800{% endif %}">
+    <div class="mt-6 p-4 rounded-xl border-l-4 {% if 'Error' in message %}border-red-500 bg-red-900/20 text-red-200{% else %}border-blue-500 bg-blue-900/20 text-blue-200{% endif %}">
         <div class="flex items-start">
             <div class="flex-shrink-0">
-                <svg class="h-5 w-5 {% if 'Error' in message %}text-red-500{% else %}text-blue-500{% endif %}" fill="currentColor" viewBox="0 0 20 20">
+                <svg class="h-5 w-5 {% if 'Error' in message %}text-red-400{% else %}text-blue-400{% endif %}" fill="currentColor" viewBox="0 0 20 20">
                     {% if 'Error' in message %}
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                     {% else %}
@@ -66,30 +71,32 @@
     </div>
     {% endif %}
     
+    <!-- Query Results Section -->
     {% if rows %}
     <div class="mt-8">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-semibold text-gray-800">Query Results</h3>
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            <h3 class="text-xl font-semibold text-white">Query Results</h3>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/30 text-green-400 border border-green-800/50">
                 {{ rows|length }} row{% if rows|length != 1 %}s{% endif %} returned
             </span>
         </div>
         
-        <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-xl">
+        <!-- Table View -->
+        <div class="overflow-hidden shadow ring-1 ring-gray-700 rounded-xl">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-300">
-                    <thead class="bg-gray-50">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead class="bg-gray-800">
                         <tr>
                             {% for column in columns %}
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ column }}</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">{{ column }}</th>
                             {% endfor %}
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="bg-gray-800/50 divide-y divide-gray-700">
                         {% for row in rows %}
-                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                        <tr class="hover:bg-gray-700/50 transition-colors duration-150">
                             {% for column in columns %}
-                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 font-mono max-w-xs truncate" title="{{ row[column] }}">
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-200 font-mono max-w-xs truncate" title="{{ row[column] }}">
                                 {{ row[column] }}
                             </td>
                             {% endfor %}
@@ -100,18 +107,19 @@
             </div>
         </div>
         
-        <div class="mt-3 flex items-center justify-between text-sm text-gray-500">
+        <!-- Pagination Controls -->
+        <div class="mt-3 flex items-center justify-between text-sm text-gray-400">
             <div>
-                <button class="text-gray-500 hover:text-gray-700 disabled:opacity-50" disabled>
+                <button class="text-gray-400 hover:text-gray-200 disabled:opacity-30" disabled>
                     Previous
                 </button>
-                <button class="ml-2 text-gray-500 hover:text-gray-700 disabled:opacity-50" disabled>
+                <button class="ml-2 text-gray-400 hover:text-gray-200 disabled:opacity-30" disabled>
                     Next
                 </button>
             </div>
-            <div>
-                Rows per page: 
-                <select class="ml-1 border-none bg-transparent focus:ring-2 focus:ring-green-500 rounded">
+            <div class="flex items-center">
+                <span class="mr-2">Rows per page:</span>
+                <select class="bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-sm text-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500">
                     <option>10</option>
                     <option>25</option>
                     <option>50</option>

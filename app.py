@@ -56,7 +56,7 @@ def database_operations():
                     db_manager.index_manager = IndexManager()
                     db_manager.transaction_manager = TransactionManager(db_name)
                     flash(f"Using database '{db_name}'", 'info')
-                    return redirect(url_for('table_operations'))
+                    return redirect(url_for('index'))
                 else:
                     flash(f"Database '{db_name}' doesn't exist!", 'error')
                     
