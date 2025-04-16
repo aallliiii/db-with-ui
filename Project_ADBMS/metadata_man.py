@@ -50,7 +50,7 @@ import os
 class MetadataManager:
     def __init__(self, db_name):
         self.db_name = db_name
-        self.db_path = f"databases/{db_name}"
+        self.db_path = f"Project_ADBMS/databases/{db_name}"
         
         self.metadata_file = f"{self.db_path}/metadata.json"
         

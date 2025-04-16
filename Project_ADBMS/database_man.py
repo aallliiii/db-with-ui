@@ -19,7 +19,7 @@ class DatabaseManager:
 
     def use_database(self):
         self.db_name = input("Enter the name of the database you want to use: ")
-        if not os.path.exists(f"databases/{self.db_name}"):
+        if not os.path.exists(f"Project_ADBMS/databases/{self.db_name}"):
             print(f"Database '{self.db_name}' does not exist!")
             self.db_name = None
             return False
@@ -36,10 +36,10 @@ class DatabaseManager:
     def create_database(self):
         
         self.db_name = input("Enter the name of the new database: ")
-        if os.path.exists(f"databases/{self.db_name}"):
+        if os.path.exists(f"Project_ADBMS/databases/{self.db_name}"):
             print(f"Database '{self.db_name}' already exists!")
             return
-        os.makedirs(f"databases/{self.db_name}", exist_ok=True)
+        os.makedirs(f"Project_ADBMS/databases/{self.db_name}", exist_ok=True)
         self.index_manager = IndexManager()
         print(f"Database '{self.db_name}' created successfully!")
 
@@ -48,7 +48,7 @@ class DatabaseManager:
        
         
         self.db_name = input("Enter the name of the database you want to delete: ").strip()
-        db_path = f"databases/{self.db_name}"
+        db_path = f"Project_ADBMS/databases/{self.db_name}"
 
         if not os.path.exists(db_path):
             print(f"Database '{self.db_name}' does not exist!")
@@ -112,7 +112,7 @@ class DatabaseManager:
                     continue
 
                 table_name = input("Enter the name of the table: ")
-                if not os.path.exists(f"databases/{self.db_name}/{table_name}.csv"):
+                if not os.path.exists(f"Project_ADBMS/databases/{self.db_name}/{table_name}.csv"):
                     print(f"Table '{table_name}' does not exist!")
                     continue
 
@@ -135,7 +135,7 @@ class DatabaseManager:
                     continue
 
                 table_name = input("Enter the name of the table: ")
-                if not os.path.exists(f"databases/{self.db_name}/{table_name}.csv"):
+                if not os.path.exists(f"Project_ADBMS/databases/{self.db_name}/{table_name}.csv"):
                     print(f"Table '{table_name}' does not exist!")
                     continue
 
@@ -162,7 +162,7 @@ class DatabaseManager:
                     continue
 
                 table_name = input("Enter the name of the table: ")
-                if not os.path.exists(f"databases/{self.db_name}/{table_name}.csv"):
+                if not os.path.exists(f"Project_ADBMS/databases/{self.db_name}/{table_name}.csv"):
                     print(f"Table '{table_name}' does not exist!")
                     continue
 
@@ -191,7 +191,7 @@ class DatabaseManager:
                     continue
 
                 table_name = input("Enter the name of the table: ")
-                if not os.path.exists(f"databases/{self.db_name}/{table_name}.csv"):
+                if not os.path.exists(f"Project_ADBMS/databases/{self.db_name}/{table_name}.csv"):
                     print(f"Table '{table_name}' does not exist!")
                     continue
 
@@ -218,7 +218,7 @@ class DatabaseManager:
                     continue
 
                 table_name = input("Enter the name of the table to delete: ")
-                if not os.path.exists(f"databases/{self.db_name}/{table_name}.csv"):
+                if not os.path.exists(f"Project_ADBMS/databases/{self.db_name}/{table_name}.csv"):
                     print(f"Table '{table_name}' does not exist!")
                     continue
 
@@ -517,7 +517,7 @@ class DatabaseManager:
         foreign_keys = parsed_query["foreign_keys"]
 
         # Ensure table doesn't already exist
-        if os.path.exists(f"databases/{self.db_name}/{table_name}.csv"):
+        if os.path.exists(f"Project_ADBMS/databases/{self.db_name}/{table_name}.csv"):
             print(f"Table '{table_name}' already exists.")
             return
 
@@ -549,8 +549,8 @@ class DatabaseManager:
             columns = parsed_query["columns"]
             values = parsed_query["values"]
 
-            table_path = f"databases/{self.db_name}/{table_name}.csv"
-            meta_path = f"databases/{self.db_name}/metadata.json"
+            table_path = f"Project_ADBMS/databases/{self.db_name}/{table_name}.csv"
+            meta_path = f"Project_ADBMS/databases/{self.db_name}/metadata.json"
 
             # Validate table existence
             if not os.path.exists(table_path):
@@ -826,7 +826,7 @@ class DatabaseManager:
         updates = parsed_query["updates"]
         conditions = parsed_query["conditions"]
 
-        if not os.path.exists(f"databases/{self.db_name}/{table_name}.csv"):
+        if not os.path.exists(f"Project_ADBMS/databases/{self.db_name}/{table_name}.csv"):
             print(f"Table '{table_name}' does not exist!")
             return
 
@@ -855,7 +855,7 @@ class DatabaseManager:
         table_name = parsed_query["table_name"]
         conditions = parsed_query.get("conditions", [])
 
-        if not os.path.exists(f"databases/{self.db_name}/{table_name}.csv"):
+        if not os.path.exists(f"Project_ADBMS/databases/{self.db_name}/{table_name}.csv"):
             print(f"Table '{table_name}' does not exist!")
             return
 
@@ -887,7 +887,7 @@ class DatabaseManager:
                     for ref_table, schema in meta_data.metadata.items():
                         for fk_col, (fk_ref_table, fk_ref_col) in schema.get("foreign_keys", {}).items():
                             if fk_ref_table == table_name and fk_ref_col == primary_key:
-                                ref_path = f"databases/{self.db_name}/{ref_table}.csv"
+                                ref_path = f"Project_ADBMS/databases/{self.db_name}/{ref_table}.csv"
                                 if os.path.exists(ref_path):
                                     ref_df = pd.read_csv(ref_path)
                                     if fk_col in ref_df.columns:
@@ -910,7 +910,7 @@ class DatabaseManager:
         table_name = parsed_query["table_name"]
 
         # Ensure table exists
-        if not os.path.exists(f"databases/{self.db_name}/{table_name}.csv"):
+        if not os.path.exists(f"Project_ADBMS/databases/{self.db_name}/{table_name}.csv"):
             print(f"Table '{table_name}' does not exist!")
             return
 

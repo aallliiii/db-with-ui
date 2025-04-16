@@ -18,7 +18,7 @@ class TransactionManager:
         self.db_name = db_name
         self.transaction_log: List = []
         self.in_transaction: bool = False
-        self.backup_dir = Path(f"databases/{db_name}/_backup")
+        self.backup_dir = Path(f"Project_ADBMS/databases/{db_name}/_backup")
         self._lock = threading.Lock()
         
     def begin(self) -> None:
@@ -62,7 +62,7 @@ class TransactionManager:
         """Create backup of the database state"""
         try:
             self.backup_dir.mkdir(parents=True, exist_ok=True)
-            db_path = Path(f"databases/{self.db_name}")
+            db_path = Path(f"Project_ADBMS/databases/{self.db_name}")
             
             for item in db_path.iterdir():
                 if item.suffix == ".csv" or item.name == "metadata.json":
@@ -77,7 +77,7 @@ class TransactionManager:
     def _restore_backup(self) -> None:
         """Restore database from backup"""
         try:
-            db_path = Path(f"databases/{self.db_name}")
+            db_path = Path(f"Project_ADBMS/databases/{self.db_name}")
             
             # Clear existing .csv and metadata.json
             for item in db_path.iterdir():
