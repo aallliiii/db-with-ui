@@ -1,0 +1,35 @@
+{
+    "hello": {
+        "columns": {
+            "id": "INT",
+            "age": "TEXT"
+        },
+        "primary_key": "id",
+        "indexes": [
+            "id"
+        ],
+        "foreign_keys": {}
+    },
+    "1": {
+        "columns": {
+            "id": "INT",
+            "age": "TEXT"
+        },
+        "primary_key": "id",
+        "indexes": [
+            "id"
+        ],
+        "foreign_keys": {}
+    },
+    "1111111": {
+        "columns": {
+            "id": "INT",
+            "age": "TEXT"
+        },
+        "primary_key": "id",
+        "indexes": [
+            "id"
+        ],
+        "foreign_keys": {}
+    }
+}

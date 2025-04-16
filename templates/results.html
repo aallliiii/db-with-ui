@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6">
+    <h2 class="text-2xl font-bold mb-6 text-center">Query Results</h2>
+    
+    <div class="overflow-x-auto">
+        {% if result is string %}
+            <div class="p-4 bg-gray-100 rounded">
+                <pre class="whitespace-pre-wrap">{{ result }}</pre>
+            </div>
+        {% else %}
+            <table class="min-w-full bg-white border">
+                <thead>
+                    <tr>
+                        {% for col in result.columns %}
+                        <th class="py-2 px-4 border-b">{{ col }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for _, row in result.iterrows() %}
+                    <tr>
+                        {% for val in row %}
+                        <td class="py-2 px-4 border-b">{{ val }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+    
+    <div class="mt-6">
+        <a href="{{ url_for('sql_interface') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Back to SQL Interface
+        </a>
+    </div>
+</div>
+{% endblock %}
