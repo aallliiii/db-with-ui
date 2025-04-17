@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,10 +24,11 @@
                             900: '#0c4a6e',
                         },
                         dark: {
-                            900: '#0a0a0a',
-                            800: '#1a1a1a',
-                            700: '#2a2a2a',
-                            600: '#3a3a3a',
+                            950: '#0a0a0f',
+                            900: '#101018',
+                            800: '#181824',
+                            700: '#252538',
+                            600: '#3a3a52',
                         }
                     },
                     fontFamily: {
@@ -38,80 +39,78 @@
         }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0a0a0f;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(38, 85, 139, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(56, 189, 248, 0.1) 0px, transparent 50%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+        .glass-panel {
+            background: rgba(24, 24, 36, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .glow-text {
+            text-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+        }
+    </style>
 </head>
-<body class="bg-dark-900 text-gray-200 font-sans antialiased min-h-screen flex flex-col">
+<body class="text-gray-200 font-sans antialiased flex flex-col min-h-screen">
     <!-- Navigation Bar -->
-    <nav class="bg-dark-800 border-b border-dark-700 shadow-xl">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-                </svg>
-                <h1 class="text-xl font-semibold text-white">DB Management</h1>
-            </div>
-            <div class="flex items-center space-x-6">
-                {% if db_manager.db_name %}
-                <div class="flex items-center bg-dark-700 px-3 py-1 rounded-full text-sm border border-dark-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-                    </svg>
-                    <span>Current DB: <span class="font-medium text-primary-400">{{ db_manager.db_name }}</span></span>
+    <nav class="glass-panel border-b border-dark-700 shadow-xl">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <div class="p-2 rounded-xl bg-gradient-to-br from-primary-600 to-primary-800 shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                        </svg>
+                    </div>
+                    <h1 class="text-2xl font-bold text-white glow-text">
+                        <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-blue-400">
+                            DB Management
+                        </span>
+                    </h1>
                 </div>
-                {% endif %}
-                <a href="{{ url_for('index') }}" class="hover:text-primary-400 transition-colors duration-200 flex items-center text-gray-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                    Home
-                </a>
+                <div class="flex items-center space-x-6">
+                    {% if db_manager.db_name %}
+                    <div class="flex items-center bg-dark-800 px-4 py-2 rounded-xl border border-dark-700 shadow-sm">
+                        <div class="h-2.5 w-2.5 rounded-full bg-primary-400 mr-2.5 animate-pulse"></div>
+                        <span class="font-medium text-primary-300">{{ db_manager.db_name }}</span>
+                    </div>
+                    {% endif %}
+                    <a href="{{ url_for('index') }}" class="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors duration-300">
+                        <div class="p-2 rounded-xl bg-dark-800 hover:bg-primary-900/30 transition-colors duration-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                            </svg>
+                        </div>
+                        <span class="font-medium">Dashboard</span>
+                    </a>
+                </div>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="flex-grow container mx-auto px-4 py-6">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                <div class="p-4 mb-6 rounded-lg shadow-lg border-l-4 bg-dark-800 border-{{ 
-                    'green-500' if category == 'success' else 
-                    'blue-500' if category == 'info' else 
-                    'red-500' if category == 'error' else 
-                    'yellow-500' 
-                }}">
-                    <div class="flex items-center">
-                        {% if category == 'success' %}
-                        <svg class="h-5 w-5 text-green-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                        </svg>
-                        {% elif category == 'error' %}
-                        <svg class="h-5 w-5 text-red-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                        </svg>
-                        {% elif category == 'info' %}
-                        <svg class="h-5 w-5 text-blue-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clip-rule="evenodd"/>
-                        </svg>
-                        {% else %}
-                        <svg class="h-5 w-5 text-yellow-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                        </svg>
-                        {% endif %}
-                        <p class="text-gray-200">{{ message }}</p>
-                    </div>
-                </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
+    <main class="flex-grow container mx-auto px-6 py-8">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
-    <footer class="bg-dark-800 border-t border-dark-700 py-4">
-        <div class="container mx-auto px-4 text-center text-gray-400 text-sm">
-            <p>© 2023 Database Management System. All rights reserved.</p>
+    <footer class="glass-panel border-t border-dark-700 py-6">
+        <div class="container mx-auto px-6 text-center text-gray-400 text-sm">
+            <p>© <span id="year"></span> Database Management System</p>
         </div>
     </footer>
+
+    <script>
+        // Set current year in footer
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
 </body>
 </html>

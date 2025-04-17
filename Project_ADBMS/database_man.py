@@ -13,7 +13,7 @@ from .transaction_manager import TransactionManager, TransactionError
 
 class DatabaseManager:  
     def __init__(self):
-        self.db_name = 'check'
+        self.db_name = None
         self.index_manager = None
         self.transaction_manager = None
 

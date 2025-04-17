@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, current_app
 from Project_ADBMS.database_man import DatabaseManager
 from Project_ADBMS.file_storage_manager import FileStorageManager
 from Project_ADBMS.Index_Manager import IndexManager
@@ -28,8 +28,23 @@ def index():
 
 @app.route('/database', methods=['GET', 'POST'])
 def database_operations():
+    db_dir = os.path.join(current_app.root_path, 'Project_ADBMS/databases')  # Adjust this path as needed
+    all_databases = []
+    # List all directories (each representing a database)
+    try:
+        all_databases = [d for d in os.listdir(db_dir) if os.path.isdir(os.path.join(db_dir, d))]
+    except FileNotFoundError:
+        all_databases = []
     if request.method == 'POST':
         operation = request.form.get('operation')
+        
+        if operation == 'unuse':
+            db_manager.db_name = None
+            db_manager.index_manager = None
+            db_manager.transaction_manager = None
+            flash("Database unselected successfully!", 'success')
+            return redirect(url_for('database_operations'))
+        
         db_name = request.form.get('db_name', '').strip()
         
         if not db_name:
@@ -47,6 +62,10 @@ def database_operations():
                         json.dump({}, f)
                     flash(f"Database '{db_name}' created successfully!", 'success')
                     db_manager.db_name = db_name
+                    db_manager.index_manager = IndexManager()
+                    db_manager.transaction_manager = TransactionManager(db_name)
+                    flash(f"Using database '{db_name}'", 'info')
+                    return redirect(url_for('index'))
                 else:
                     flash(f"Database '{db_name}' already exists!", 'error')
                     
@@ -66,13 +85,16 @@ def database_operations():
                     flash(f"Database '{db_name}' deleted successfully!", 'success')
                     if db_manager.db_name == db_name:
                         db_manager.db_name = None
+                        db_manager.index_manager = None
+                        db_manager.transaction_manager = None
+                    return redirect(url_for('index'))
                 else:
                     flash(f"Database '{db_name}' doesn't exist!", 'error')
                     
         except Exception as e:
             flash(f"Error: {str(e)}", 'error')
     
-    return render_template('database.html')
+    return render_template('database.html', all_databases=all_databases)
 
 @app.route('/tables', methods=['GET', 'POST'])
 def table_operations():
