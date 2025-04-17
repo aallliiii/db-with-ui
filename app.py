@@ -165,12 +165,14 @@ def sql_interface():
                 # Execute the query
                 
                 result = db_manager.execute_sql(sql_query)
+                print(db_manager.execute_sql(sql_query))
                 
                 # Handle different result types
                 if isinstance(result, pd.DataFrame):
                     if not result.empty:
                         columns = list(result.columns)
                         rows = result.to_dict('records')
+                        print(columns,rows)
                     else:
                         message = "Query executed successfully but returned no results"
                 elif isinstance(result, str):
@@ -183,7 +185,7 @@ def sql_interface():
             except Exception as e:
                 flash(f"Error executing query: {str(e)}", 'error')
                 message = str(e)
-    
+    print(columns,rows)
     return render_template('sql.html', 
                          query=request.form.get('sql_query', ''),
                          columns=columns,

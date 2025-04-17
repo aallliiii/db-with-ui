@@ -570,14 +570,17 @@ class QueryParser:
         """Parse SELECT query with advanced features"""
         # Improved pattern to handle complex SELECTs
         pattern = (
-            r"select\s+(.+?)\s+from\s+(\w+)(?:\s+(?:as\s+)?(\w+)?"
+            r"select\s+(.+?)\s+from\s+(\w+)"
+            r"(?:\s+(?:as\s+)?(\w+))?"  # <-- fixed parentheses here
             r"(?:\s+where\s+(.+?))?"
             r"(?:\s+group\s+by\s+(.+?))?"
             r"(?:\s+having\s+(.+?))?"
             r"(?:\s+order\s+by\s+(.+?))?"
             r"(?:\s+limit\s+(\d+))?"
-            r"(?:\s+offset\s+(\d+))?$"
-        )
+            r"(?:\s+offset\s+(\d+))?"
+            r"$"
+)
+
         
         match = re.match(pattern, query, re.IGNORECASE)
         if not match:

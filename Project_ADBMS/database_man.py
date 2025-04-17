@@ -393,7 +393,7 @@ class DatabaseManager:
 
             parsed_query = QueryParser.parse(sql_query)
             query_type = parsed_query.get("type")
-           
+
             print(f"🧠 Parsed query type: {query_type}")
 
             # Mapping query types to handler methods
@@ -404,8 +404,6 @@ class DatabaseManager:
                 "select": self.select_from_table,
                 "create_table": self.create_table,
                 "drop_table": self.drop_table,
-
-                # ✅ NEW: transaction commands
                 "begin_transaction": lambda _: self._begin_transaction_sql(),
                 "commit": lambda _: self._commit_transaction_sql(),
                 "rollback": lambda _: self._rollback_transaction_sql()
@@ -413,7 +411,7 @@ class DatabaseManager:
 
             if query_type not in query_handlers:
                 print("❌ Unsupported query type.")
-                return
+                return "Unsupported query type."
 
             handler = query_handlers[query_type]
 
@@ -422,21 +420,29 @@ class DatabaseManager:
                     if self.transaction_manager and self.transaction_manager.in_transaction:
                         try:
                             handler(parsed_query)
+                            return f"{query_type.upper()} successful within transaction"
                         except Exception as e:
                             print(f"⚠️ Error during {query_type.upper()} inside transaction: {e}")
                             self.transaction_manager.rollback()
+                            return f"{query_type.upper()} failed, rolled back"
                     else:
                         with self.transaction_manager:
                             handler(parsed_query)
+                            return f"{query_type.upper()} successful"
                 except Exception as e:
                     print(f"⚠️ Error during {query_type.upper()}, rolled back: {e}")
+                    return f"Error: {e}"
+
+            elif query_type == "select":
+                return handler(parsed_query)  # ✅ Return result of SELECT
+
             else:
                 # Non-transactional operations or explicit transaction commands
-                handler(parsed_query)
+                return handler(parsed_query)
 
         except Exception as e:
             print(f"❌ Error executing query: {e}")
-
+            return f"Error: {str(e)}"
 
 
 
@@ -736,7 +742,10 @@ class DatabaseManager:
             raise Exception(f"Table '{table_name}' does not exist!")
 
         table = FileStorageManager(self.db_name, table_name, self.index_manager)
-        records = table.select_records()  # Pandas DataFrame
+        records = table.select_records()
+        # print(records.head()) 
+        # return records # Pandas DataFrame
+        
 
         if records is None or records.empty:
             return pd.DataFrame()  # Return empty DataFrame instead of None
@@ -748,6 +757,7 @@ class DatabaseManager:
                 record_dict = row.to_dict()
                 if self.evaluate_conditions(record_dict, conditions):
                     filtered.append(record_dict)
+            print(records.head())
             records = pd.DataFrame(filtered)
 
         # Return empty DataFrame if no records matched
@@ -809,6 +819,8 @@ class DatabaseManager:
             # No GROUP BY → Normal projection after WHERE
             if columns == ["*"]:
                 columns = table.columns
+                # print(records.head())
+                # return records
 
             # Apply ORDER BY
             if order_by:
@@ -816,8 +828,9 @@ class DatabaseManager:
                     if col not in records.columns:
                         raise ValueError(f"Column '{col}' not found in records.")
                     records = records.sort_values(by=col, ascending=(direction == "asc"))
-
+            print(records[columns])
             return records[columns]
+
 
     def update_table(self, parsed_query):
         """Update records in a table based on complex conditions"""
