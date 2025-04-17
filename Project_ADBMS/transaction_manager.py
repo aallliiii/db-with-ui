@@ -5,6 +5,7 @@ import threading
 from typing import List
 from pathlib import Path
 import logging
+import pandas as pd
 
 # --- Setup Logging ---
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -53,6 +54,8 @@ class TransactionManager:
                 self._restore_backup()
                 self.transaction_log.clear()
                 self.in_transaction = False
+                self._clear_backup()
+                self._reload_database_state()  
                 logging.info("🧼 Rollback successful. Database restored.")
             except Exception as e:
                 logging.error("❌ Rollback failed", exc_info=True)
@@ -119,3 +122,52 @@ class TransactionManager:
             self.rollback()
         else:
             self.commit()
+
+
+
+
+    def _reload_database_state(self):
+        """Reload database state after rollback: rebuild tables, indexes from disk."""
+        try:
+            # Clear current state
+            self.database.tables.clear()
+            self.database.index_manager.indexes.clear()
+
+            # Reload tables
+            for file in os.listdir(f"Project_ADBMS/databases/{self.database.db_name}"):
+                if file.endswith(".csv"):
+                    table_name = file[:-4]  # Remove '.csv'
+                    table_path = f"Project_ADBMS/databases/{self.database.db_name}/{file}"
+
+                    df = pd.read_csv(table_path)
+                    if df.empty:
+                        continue
+
+                    columns = list(df.columns)
+
+                    # Optional: you may want to store column types and primary key info separately
+                    # For now assuming you can retrieve them from somewhere (metadata)
+
+                    # Rebuild table
+                    table = Table(
+                        table_name=table_name,
+                        db_name=self.database.db_name,
+                        columns=columns,
+                        column_types=self.database.metadata_manager.get_column_types(table_name),
+                        primary_key=self.database.metadata_manager.get_primary_key(table_name),
+                        foreign_keys=self.database.metadata_manager.get_foreign_keys(table_name),
+                        index_manager=self.database.index_manager
+                    )
+                    self.database.tables[table_name] = table
+
+                    # Rebuild primary key indexes
+                    primary_key = table.primary_key
+                    if primary_key:
+                        for offset, pk_value in enumerate(df[primary_key].astype(str).values):
+                            self.database.index_manager.add_primary_index(table_name, pk_value, offset)
+
+            print("✅ Database state reloaded successfully after rollback.")
+
+        except Exception as e:
+            raise TransactionError("Failed to reload database state") from e
+

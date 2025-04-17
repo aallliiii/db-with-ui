@@ -1,39 +1,8 @@
 {
-    "orders": {
-        "columns": {
-            "order_id": "INT",
-            "customer_name": "TEXT",
-            "total_amount": "FLOAT",
-            "order_date": "DATE",
-            "delivery_time": "TIME",
-            "is_paid": "BOOL"
-        },
-        "primary_key": "order_id",
-        "indexes": [
-            "order_id"
-        ],
-        "foreign_keys": {}
-    },
-    "again": {
+    "users": {
         "columns": {
             "id": "INT",
-            "name": "TEXT",
-            "firstname": "TEXT",
-            "lastname": "TEXT"
-        },
-        "primary_key": "id",
-        "indexes": [
-            "id"
-        ],
-        "foreign_keys": {}
-    },
-    "group": {
-        "columns": {
-            "id": "INT",
-            "name": "TEXT",
-            "category": "TEXT",
-            "salary": "TEXT",
-            "city": "TEXT"
+            "name": "TEXT"
         },
         "primary_key": "id",
         "indexes": [

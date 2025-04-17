@@ -555,46 +555,51 @@ class FileStorageManager:
 
 
     def insert_record(self, record):
+        """Insert a record after validating types, primary keys, and foreign keys."""
         if len(record) != len(self.columns):
-            raise ValueError(f"Record length {len(record)} doesn't match columns {len(self.columns)}")
+            raise ValueError(f"Record length {len(record)} doesn't match expected columns {len(self.columns)}")
 
+        # Type validation
         for i, col in enumerate(self.columns):
             expected_type = self.column_types[col]
-            print(f"Validating {col} with expected type {expected_type} for value {record[i]}")
-            if not self._validate_type(record[i], expected_type):
-                raise ValueError(f"Invalid type for column '{col}'. Expected {expected_type}, got '{record[i]}'")
+            value = record[i]
+            print(f"Validating {col}: expected {expected_type}, got value '{value}'")
+            if not self._validate_type(value, expected_type):
+                raise ValueError(f"Invalid type for column '{col}'. Expected {expected_type}, got '{value}'")
 
+        # Try loading existing data
         try:
             df = pd.read_csv(self.file_path)
-            
         except (FileNotFoundError, pd.errors.EmptyDataError):
             df = pd.DataFrame(columns=self.columns)
 
         primary_key_value = str(record[self.columns.index(self.primary_key)])
 
-        if not df.empty and primary_key_value in df[self.primary_key].astype(str).values:
-            raise ValueError(f"Primary key {primary_key_value} already exists in table")
-
+        # Primary key check using B+ Tree index only
         if self.index_manager.get_primary_index(self.table_name, primary_key_value) is not None:
             raise ValueError(f"Primary key {primary_key_value} already exists in index")
 
+        # Foreign key validation
         for col, (ref_table, ref_col) in self.foreign_keys.items():
             ref_value = str(record[self.columns.index(col)])
-            if ref_value:
+            if ref_value:  # Only check if value is non-empty
                 ref_path = f"Project_ADBMS/databases/{self.db_name}/{ref_table}.csv"
                 if not os.path.exists(ref_path):
-                    raise ValueError(f"Referenced table {ref_table} doesn't exist")
+                    raise ValueError(f"Referenced table '{ref_table}' does not exist")
                 ref_df = pd.read_csv(ref_path)
-                if ref_value not in ref_df[ref_col].astype(str).values:
-                    raise ValueError(f"Foreign key violation: {ref_value} not found in {ref_table}.{ref_col}")
+                if not ref_df.empty and ref_value not in ref_df[ref_col].astype(str).values:
+                    raise ValueError(f"Foreign key violation: Value '{ref_value}' not found in {ref_table}.{ref_col}")
 
+        # Calculate file offset (row number)
         offset = len(df)
 
+        # First, add to index (in-memory B+Tree)
         try:
             self.index_manager.add_primary_index(self.table_name, primary_key_value, offset)
         except Exception as e:
-            raise ValueError(f"Failed to add to index: {str(e)}")
+            raise ValueError(f"Failed to add primary key to index: {str(e)}")
 
+        # Now write to file
         try:
             write_header = not os.path.exists(self.file_path) or os.path.getsize(self.file_path) == 0
 
@@ -603,12 +608,15 @@ class FileStorageManager:
                 if write_header:
                     writer.writerow(self.columns)
                 writer.writerow(record)
-        except Exception as e:
-            self.index_manager.delete_primary_index(self.table_name, primary_key_value)
-            raise IOError(f"Failed to write record: {str(e)}")
 
-        print(f"✅ Record inserted successfully. PK: {primary_key_value}, Offset: {offset}")
+        except Exception as e:
+            # Rollback in-memory index if file write fails
+            self.index_manager.delete_primary_index(self.table_name, primary_key_value)
+            raise IOError(f"Failed to write record to file: {str(e)}")
+
+        print(f"✅ Record inserted successfully. PK={primary_key_value}, Offset={offset}")
         return offset
+
 
 
     # def delete_record(self, search_column, search_value):
