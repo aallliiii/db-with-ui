@@ -187,7 +187,7 @@ def sql_interface():
                 # Execute the query
                 
                 result = db_manager.execute_sql(sql_query)
-                print(db_manager.execute_sql(sql_query))
+                # print(db_manager.execute_sql(sql_query))
                 
                 # Handle different result types
                 if isinstance(result, pd.DataFrame):

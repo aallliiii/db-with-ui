@@ -1,0 +1,13 @@
+{
+    "users": {
+        "columns": {
+            "id": "INT",
+            "name": "TEXT"
+        },
+        "primary_key": "id",
+        "indexes": [
+            "id"
+        ],
+        "foreign_keys": {}
+    }
+}
