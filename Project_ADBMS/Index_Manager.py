@@ -35,11 +35,7 @@ class IndexManager:
         if not tree.update(key, new_offset):
             raise KeyError(f"Primary key {key} not found in table '{table_name}'.")
 
-    # def rebuild_primary_index(self, table_name, df, primary_key_column):
-    #     """Rebuilds primary index after deletion to keep offsets accurate."""
-    #     self.primary_indexes[table_name] = BPlusTree(self.order)  # Reset the index
-    #     for offset, row in df.iterrows():
-    #         self.add_primary_index(table_name, row[primary_key_column], offset)
+   
 
     def rebuild_primary_index(self, table_name, df, primary_key_column):
         """Rebuilds primary index from scratch"""
