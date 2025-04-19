@@ -10,12 +10,15 @@ import json
 from pandas import DataFrame
 import re
 from .transaction_manager import TransactionManager, TransactionError
+from .metadata_man import MetadataManager # Adjust path as needed
 
 class DatabaseManager:  
     def __init__(self):
         self.db_name = None
         self.index_manager = None
         self.transaction_manager = None
+        self.metadata_manager=None
+        # self.tables={}
 
     def use_database(self):
         self.db_name = input("Enter the name of the database you want to use: ")
@@ -24,11 +27,14 @@ class DatabaseManager:
             self.db_name = None
             return False
         
+        if self.metadata_manager is None:
+            self.metadata_manager = MetadataManager(self.db_name)
+        
         if self.index_manager is None:
             self.index_manager = IndexManager()
             
         # Initialize TransactionManager for this database
-        self.transaction_manager = TransactionManager(self.db_name)
+        self.transaction_manager = TransactionManager(self.db_name,database=self)
         
         print(f"Using database '{self.db_name}'.")
         return True

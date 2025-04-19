@@ -15,12 +15,16 @@ class TransactionError(Exception):
     pass
 
 class TransactionManager:
-    def __init__(self, db_name: str):
+    def __init__(self, db_name: str,database=None):
         self.db_name = db_name
         self.transaction_log: List = []
+        self.database=database
         self.in_transaction: bool = False
         self.backup_dir = Path(f"Project_ADBMS/databases/{db_name}/_backup")
         self._lock = threading.Lock()
+
+        if self.database is None:
+            logging.warning("⚠️ TransactionManager initialized without database reference")
         
     def begin(self) -> None:
         """Begin a new transaction"""
@@ -53,9 +57,9 @@ class TransactionManager:
             try:
                 self._restore_backup()
                 self.transaction_log.clear()
+                self._reload_database_state() 
                 self.in_transaction = False
                 self._clear_backup()
-                # self._reload_database_state()  
                 logging.info("🧼 Rollback successful. Database restored.")
             except Exception as e:
                 logging.error("❌ Rollback failed", exc_info=True)
@@ -124,50 +128,49 @@ class TransactionManager:
             self.commit()
 
 
+    def _reload_database_state(self):
+        try:
+            # Clear any existing primary indexes
+            self.database.index_manager.primary_indexes.clear()
 
+            db_path = Path(f"Project_ADBMS/databases/{self.db_name}")
+            for file in db_path.iterdir():
+                if file.suffix == ".csv":
+                    table_name = file.stem
+                    df = pd.read_csv(file)
 
-    # def _reload_database_state(self):
-    #     """Reload database state after rollback: rebuild tables, indexes from disk."""
-    #     try:
-    #         # Clear current state
-    #         self.database.tables.clear()
-    #         self.database.index_manager.indexes.clear()
+                    if df.empty:
+                        continue
 
-    #         # Reload tables
-    #         for file in os.listdir(f"Project_ADBMS/databases/{self.database.db_name}"):
-    #             if file.endswith(".csv"):
-    #                 table_name = file[:-4]  # Remove '.csv'
-    #                 table_path = f"Project_ADBMS/databases/{self.database.db_name}/{file}"
+                    # Try to infer primary key from existing index structure (if any)
+                    primary_key_column = None
+                    if table_name in self.database.index_manager.primary_indexes:
+                        tree = self.database.index_manager.primary_indexes[table_name]
+                        if tree.root and tree.root.keys:
+                            primary_key_column = tree.root.keys[0][0]
+                            if isinstance(primary_key_column, tuple):
+                                primary_key_column = primary_key_column[0]
+                        else:
+                            logging.warning(f"⚠️ Index for '{table_name}' has no keys.")
+                    else:
+                        logging.warning(f"⚠️ No existing primary index found for table '{table_name}'. Skipping index rebuild.")
+                        continue
 
-    #                 df = pd.read_csv(table_path)
-    #                 if df.empty:
-    #                     continue
+                    if not primary_key_column or primary_key_column not in df.columns:
+                        logging.warning(f"⚠️ Invalid primary key for table '{table_name}'. Skipping.")
+                        continue
 
-    #                 columns = list(df.columns)
+                    self.database.index_manager.rebuild_primary_index(
+                        table_name=table_name,
+                        df=df,
+                        primary_key_column=primary_key_column
+                    )
 
-    #                 # Optional: you may want to store column types and primary key info separately
-    #                 # For now assuming you can retrieve them from somewhere (metadata)
+            self.in_transaction = False  # Ensure this is always reset just like in commit
+            logging.info("✅ Reloaded database state successfully.")
 
-    #                 # Rebuild table
-    #                 table = Table(
-    #                     table_name=table_name,
-    #                     db_name=self.database.db_name,
-    #                     columns=columns,
-    #                     column_types=self.database.metadata_manager.get_column_types(table_name),
-    #                     primary_key=self.database.metadata_manager.get_primary_key(table_name),
-    #                     foreign_keys=self.database.metadata_manager.get_foreign_keys(table_name),
-    #                     index_manager=self.database.index_manager
-    #                 )
-    #                 self.database.tables[table_name] = table
-
-    #                 Rebuild primary key indexes
-    #                 primary_key = table.primary_key
-    #                 if primary_key:
-    #                     for offset, pk_value in enumerate(df[primary_key].astype(str).values):
-    #                         self.database.index_manager.add_primary_index(table_name, pk_value, offset)
-
-    #         print("✅ Database state reloaded successfully after rollback.")
-
-    #     except Exception as e:
-    #         raise TransactionError("Failed to reload database state") from e
+        except Exception as e:
+            self.in_transaction = False  # Even if rollback reload fails, transaction ends
+            logging.error("❌ Failed to reload database state", exc_info=True)
+            raise TransactionError("Failed to reload database state") from e
 

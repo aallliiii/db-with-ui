@@ -73,7 +73,7 @@ def database_operations():
                 if os.path.exists(db_path):
                     db_manager.db_name = db_name
                     db_manager.index_manager = IndexManager()
-                    db_manager.transaction_manager = TransactionManager(db_name)
+                    db_manager.transaction_manager = TransactionManager(db_name,db_manager)
                     flash(f"Using database '{db_name}'", 'info')
                     return redirect(url_for('index'))
                 else:

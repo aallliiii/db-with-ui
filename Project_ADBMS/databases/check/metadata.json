@@ -9,5 +9,22 @@
             "id"
         ],
         "foreign_keys": {}
+    },
+    "orders": {
+        "columns": {
+            "id": "INT",
+            "ord_name": "TEXT",
+            "user_id": "INT"
+        },
+        "primary_key": "id",
+        "indexes": [
+            "id"
+        ],
+        "foreign_keys": {
+            "user_id": [
+                "users",
+                "id"
+            ]
+        }
     }
 }
