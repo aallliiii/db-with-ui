@@ -168,33 +168,83 @@ def table_operations():
     
     return render_template('tables.html')
 import pandas as pd
+# @app.route('/sql', methods=['GET', 'POST'])
+# def sql_interface():
+#     if not db_manager.db_name:
+#         return redirect(url_for('database_operations'))
+    
+#     result = None
+#     columns = []
+#     rows = []
+#     message = None
+    
+#     if request.method == 'POST':
+#         sql_query = request.form.get('sql_query', '').strip()
+#         if not sql_query:
+#             flash("SQL query cannot be empty!", 'error')
+#         else:
+#             try:
+#                 # Execute the query
+                
+#                 result = db_manager.execute_sql(sql_query)
+#                 # print(db_manager.execute_sql(sql_query))
+                
+#                 # Handle different result types
+#                 if isinstance(result, pd.DataFrame):
+#                     if not result.empty:
+#                         columns = list(result.columns)
+#                         rows = result.to_dict('records')
+#                         print(columns,rows)
+#                     else:
+#                         message = "Query executed successfully but returned no results"
+#                 elif isinstance(result, str):
+#                     message = result
+#                 elif result is None:
+#                     message = "Query executed successfully"
+#                 else:
+#                     message = str(result)
+                    
+#             except Exception as e:
+#                 flash(f"Error executing query: {str(e)}", 'error')
+#                 message = str(e)
+#     print(columns,rows)
+#     return render_template('sql.html', 
+#                          query=request.form.get('sql_query', ''),
+#                          columns=columns,
+#                          rows=rows,
+#                          message=message)
+
+import time
+
+
 @app.route('/sql', methods=['GET', 'POST'])
 def sql_interface():
     if not db_manager.db_name:
         return redirect(url_for('database_operations'))
-    
+
     result = None
     columns = []
     rows = []
     message = None
-    
+    execution_time = None
+
     if request.method == 'POST':
         sql_query = request.form.get('sql_query', '').strip()
         if not sql_query:
             flash("SQL query cannot be empty!", 'error')
         else:
             try:
-                # Execute the query
-                
+                start_time = time.time()  # Start timer
+
                 result = db_manager.execute_sql(sql_query)
-                # print(db_manager.execute_sql(sql_query))
-                
-                # Handle different result types
+
+                end_time = time.time()  # End timer
+                execution_time = round((end_time - start_time) * 1000, 2)  # in milliseconds
+
                 if isinstance(result, pd.DataFrame):
                     if not result.empty:
                         columns = list(result.columns)
                         rows = result.to_dict('records')
-                        print(columns,rows)
                     else:
                         message = "Query executed successfully but returned no results"
                 elif isinstance(result, str):
@@ -203,16 +253,18 @@ def sql_interface():
                     message = "Query executed successfully"
                 else:
                     message = str(result)
-                    
+
             except Exception as e:
                 flash(f"Error executing query: {str(e)}", 'error')
                 message = str(e)
-    print(columns,rows)
-    return render_template('sql.html', 
-                         query=request.form.get('sql_query', ''),
-                         columns=columns,
-                         rows=rows,
-                         message=message)
+
+    return render_template('sql.html',
+                           query=request.form.get('sql_query', ''),
+                           columns=columns,
+                           rows=rows,
+                           message=message,
+                           execution_time=execution_time)
+
 
 @app.route('/transaction', methods=['GET', 'POST'])
 def transaction_management():
