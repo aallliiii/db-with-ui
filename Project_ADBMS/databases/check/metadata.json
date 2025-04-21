@@ -1,29 +1,61 @@
 {
-    "users": {
+    "orders": {
         "columns": {
-            "id": "INT",
-            "name": "TEXT"
+            "order_id": "INT",
+            "customer_id": "INT",
+            "order_date": "DATE",
+            "status": "VARCHAR"
         },
-        "primary_key": "id",
+        "primary_key": "order_id",
         "indexes": [
-            "id"
+            "order_id"
         ],
         "foreign_keys": {}
     },
-    "orders": {
+    "customers": {
         "columns": {
-            "id": "INT",
-            "ord_name": "TEXT",
-            "user_id": "INT"
+            "customer_id": "INT",
+            "customer_name": "VARCHAR",
+            "email": "VARCHAR"
         },
-        "primary_key": "id",
+        "primary_key": "customer_id",
         "indexes": [
-            "id"
+            "customer_id"
+        ],
+        "foreign_keys": {}
+    },
+    "products": {
+        "columns": {
+            "product_id": "INT",
+            "product_name": "VARCHAR",
+            "price": "DECIMAL"
+        },
+        "primary_key": "product_id",
+        "indexes": [
+            "product_id"
+        ],
+        "foreign_keys": {}
+    },
+    "order_items": {
+        "columns": {
+            "order_item_id": "INT",
+            "order_id": "INT",
+            "product_id": "INT",
+            "quantity": "INT",
+            "price": "DECIMAL"
+        },
+        "primary_key": "order_item_id",
+        "indexes": [
+            "order_item_id"
         ],
         "foreign_keys": {
-            "user_id": [
-                "users",
-                "id"
+            "order_id": [
+                "orders",
+                "order_id"
+            ],
+            "product_id": [
+                "products",
+                "product_id"
             ]
         }
     }

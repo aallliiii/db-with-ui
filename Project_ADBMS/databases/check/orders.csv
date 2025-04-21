@@ -1,2 +1,5 @@
-id,ord_name,user_id
-1,Dell_Laptop,3
+order_id,customer_id,order_date,status
+1,101,2025-01-01,completed
+2,102,2025-02-15,pending
+3,103,2025-03-20,completed
+4,104,2025-04-10,completed
