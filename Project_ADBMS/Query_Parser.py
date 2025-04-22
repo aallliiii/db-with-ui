@@ -15,7 +15,6 @@ class QueryParser:
         elif lower_query.startswith("insert into"):
             return QueryParser._parse_insert(query)
         elif lower_query.startswith("select"):
-       
             return QueryParser._parse_select(query)
         elif lower_query.startswith("update"):
             return QueryParser._parse_update(query)
@@ -164,42 +163,34 @@ class QueryParser:
             "values": [v.strip("'\"") if (v.startswith("'") and v.endswith("'")) or 
                       (v.startswith('"') and v.endswith('"')) else v for v in values]
         }
-
     @staticmethod
     def _parse_select(query: str) -> Dict:
-        """Parse SELECT query with advanced features"""
-        # Improved pattern to handle complex SELECTs
+        """Parse SELECT query with INNER, LEFT, RIGHT, FULL JOIN support and advanced features"""
         pattern = (
             r"select\s+(.+?)\s+from\s+(\w+)"
-            r"(?:\s+(?:as\s+)?(\w+))?"  # <-- fixed parentheses here
+            r"(?:\s+(?:as\s+)?(\w+))?"  # main table alias
+            r"(?:\s+(inner|left|right|full)\s+join\s+(\w+)(?:\s+(?:as\s+)?(\w+))?\s+on\s+([^\s]+?\s*=\s*[^\s]+?))?"  # JOIN
             r"(?:\s+where\s+(.+?))?"
             r"(?:\s+group\s+by\s+(.+?))?"
             r"(?:\s+having\s+(.+?))?"
             r"(?:\s+order\s+by\s+(.+?))?"
             r"(?:\s+limit\s+(\d+))?"
             r"(?:\s+offset\s+(\d+))?"
-            r"$"
-)
+            r"\s*$"
+        )
 
-        
-        match = re.match(pattern, query, re.IGNORECASE)
+        match = re.match(pattern, query.strip(), re.IGNORECASE)
         if not match:
             raise ValueError("Invalid SELECT syntax")
-        columns_part = match.group(1)
-        table_name = match.group(2)
-        table_alias = match.group(3)
-        where_clause = match.group(4)
-        group_by_clause = match.group(5)
-        having_clause = match.group(6)
-        order_by_clause = match.group(7)
-        limit = match.group(8)
-        offset = match.group(9)
 
-        # Parse columns with aliases and functions
+        (columns_part, table_name, table_alias,
+        join_type, join_table, join_alias, join_condition,
+        where_clause, group_by_clause, having_clause,
+        order_by_clause, limit, offset) = match.groups()
+
         columns = []
         for col in columns_part.split(","):
             col = col.strip()
-            # Handle column aliases (AS or implicit)
             if " as " in col.lower():
                 parts = re.split(r"\s+as\s+", col, flags=re.IGNORECASE)
                 columns.append({
@@ -209,36 +200,106 @@ class QueryParser:
             else:
                 columns.append(col)
 
-        # Parse conditions
-        conditions = QueryParser.parse_conditions(where_clause) if where_clause else []
-        having = QueryParser.parse_conditions(having_clause) if having_clause else []
-
-        # Parse GROUP BY
-        group_by = [g.strip() for g in group_by_clause.split(",")] if group_by_clause else []
-
-        # Parse ORDER BY
-        order_by = []
-        if order_by_clause:
-            for part in order_by_clause.split(","):
-                part = part.strip()
-                if " " in part:
-                    col, direction = part.rsplit(" ", 1)
-                    order_by.append((col.strip(), direction.lower()))
-                else:
-                    order_by.append((part, "asc"))
-
         return {
             "type": "select",
             "table_name": table_name,
             "table_alias": table_alias,
             "columns": columns,
-            "conditions": conditions,
-            "group_by": group_by,
-            "having": having,
-            "order_by": order_by,
+            "join": {
+                "type": join_type.lower() if join_type else None,
+                "table": join_table,
+                "alias": join_alias,
+                "condition": join_condition
+            } if join_table else None,
+            "conditions": QueryParser.parse_conditions(where_clause) if where_clause else [],
+            "group_by": [g.strip() for g in group_by_clause.split(",")] if group_by_clause else [],
+            "having": QueryParser.parse_conditions(having_clause) if having_clause else [],
+            "order_by": [(x.strip().rsplit(" ", 1)[0], x.strip().rsplit(" ", 1)[1].lower()) if " " in x else (x.strip(), "asc")
+                        for x in order_by_clause.split(",")] if order_by_clause else [],
             "limit": int(limit) if limit else None,
             "offset": int(offset) if offset else None
         }
+
+
+
+    
+
+#     @staticmethod
+#     def _parse_select(query: str) -> Dict:
+#         """Parse SELECT query with advanced features"""
+#         # Improved pattern to handle complex SELECTs
+#         pattern = (
+#             r"select\s+(.+?)\s+from\s+(\w+)"
+#             r"(?:\s+(?:as\s+)?(\w+))?"  # <-- fixed parentheses here
+#             r"(?:\s+where\s+(.+?))?"
+#             r"(?:\s+group\s+by\s+(.+?))?"
+#             r"(?:\s+having\s+(.+?))?"
+#             r"(?:\s+order\s+by\s+(.+?))?"
+#             r"(?:\s+limit\s+(\d+))?"
+#             r"(?:\s+offset\s+(\d+))?"
+#             r"$"
+# )
+
+        
+#         match = re.match(pattern, query, re.IGNORECASE)
+#         if not match:
+#             raise ValueError("Invalid SELECT syntax")
+#         columns_part = match.group(1)
+#         table_name = match.group(2)
+#         table_alias = match.group(3)
+#         where_clause = match.group(4)
+#         group_by_clause = match.group(5)
+#         having_clause = match.group(6)
+#         order_by_clause = match.group(7)
+#         limit = match.group(8)
+#         offset = match.group(9)
+
+#         # Parse columns with aliases and functions
+#         columns = []
+#         for col in columns_part.split(","):
+#             col = col.strip()
+#             # Handle column aliases (AS or implicit)
+#             if " as " in col.lower():
+#                 parts = re.split(r"\s+as\s+", col, flags=re.IGNORECASE)
+#                 columns.append({
+#                     "expression": parts[0].strip(),
+#                     "alias": parts[1].strip()
+#                 })
+#             else:
+#                 columns.append(col)
+
+#         # Parse conditions
+#         conditions = QueryParser.parse_conditions(where_clause) if where_clause else []
+#         having = QueryParser.parse_conditions(having_clause) if having_clause else []
+
+#         # Parse GROUP BY
+#         group_by = [g.strip() for g in group_by_clause.split(",")] if group_by_clause else []
+
+#         # Parse ORDER BY
+#         order_by = []
+#         if order_by_clause:
+#             for part in order_by_clause.split(","):
+#                 part = part.strip()
+#                 if " " in part:
+#                     col, direction = part.rsplit(" ", 1)
+#                     order_by.append((col.strip(), direction.lower()))
+#                 else:
+#                     order_by.append((part, "asc"))
+
+#         return {
+#             "type": "select",
+#             "table_name": table_name,
+#             "table_alias": table_alias,
+#             "columns": columns,
+#             "conditions": conditions,
+#             "group_by": group_by,
+#             "having": having,
+#             "order_by": order_by,
+#             "limit": int(limit) if limit else None,
+#             "offset": int(offset) if offset else None
+#         }
+    
+
 
     @staticmethod
     def _parse_update(query: str) -> Dict:

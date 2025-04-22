@@ -529,61 +529,176 @@ class DatabaseManager:
 
 
 
-    
+    # def select_from_table(self, parsed_query):
+    #     """Handle SELECT queries with advanced conditions, GROUP BY, HAVING, and ORDER BY"""
+    #     table_name = parsed_query["table_name"]
+    #     columns = parsed_query["columns"]
+    #     conditions = parsed_query["conditions"]
+    #     group_by = parsed_query.get("group_by", [])
+    #     having = parsed_query.get("having", [])
+    #     order_by = parsed_query.get("order_by", [])
 
+    #     # Ensure the table exists
+    #     table_path = f"Project_ADBMS/databases/{self.db_name}/{table_name}.csv"
+    #     if not os.path.exists(table_path):
+    #         raise Exception(f"Table '{table_name}' does not exist!")
+
+    #     table = FileStorageManager(self.db_name, table_name, self.index_manager)
+    #     records = table.select_records()
+        
+
+    #     if records is None or records.empty:
+    #         return pd.DataFrame()  # Return empty DataFrame instead of None
+
+    #     # Apply WHERE conditions before grouping
+    #     if conditions:
+    #         filtered = []
+    #         for _, row in records.iterrows():
+    #             record_dict = row.to_dict()
+    #             if self.evaluate_conditions(record_dict, conditions):
+    #                 filtered.append(record_dict)
+    #         print(records.head())
+    #         records = pd.DataFrame(filtered)
+
+    #     # Return empty DataFrame if no records matched
+    #     if records.empty:
+    #         return pd.DataFrame()
+
+    #     # Ensure columns are correctly set after filtering
+    #     records.columns = table.columns
+
+    #     # GROUP BY logic
+    #     if group_by:
+    #         agg_ops = {}
+    #         selected_cols = list(group_by)
+
+    #         for col in columns:
+    #             if "(" in col and ")" in col:
+    #                 func = col.split("(")[0].lower()
+    #                 field = col.split("(")[1].replace(")", "").strip()
+
+    #                 alias = f"{func}({field})"
+    #                 selected_cols.append(alias)
+
+    #                 if func == "count":
+    #                     agg_ops[alias] = (field, 'count')
+    #                 elif func == "sum":
+    #                     agg_ops[alias] = (field, 'sum')
+    #                 elif func == "avg":
+    #                     agg_ops[alias] = (field, 'mean')
+    #                 elif func == "min":
+    #                     agg_ops[alias] = (field, 'min')
+    #                 elif func == "max":
+    #                     agg_ops[alias] = (field, 'max')
+    #             elif col not in group_by:
+    #                 selected_cols.append(col)
+
+    #         # Apply aggregation
+    #         grouped = records.groupby(group_by)
+    #         result_df = grouped.agg(**agg_ops).reset_index()
+
+    #         # Apply HAVING clause
+    #         if having:
+    #             filtered = []
+    #             for _, row in result_df.iterrows():
+    #                 record_dict = row.to_dict()
+    #                 if self.evaluate_conditions(record_dict, having):
+    #                     filtered.append(record_dict)
+    #             result_df = pd.DataFrame(filtered)
+
+    #         # Apply ORDER BY
+    #         if order_by:
+    #             for col, direction in order_by:
+    #                 if col not in result_df.columns:
+    #                     raise ValueError(f"Column '{col}' not found in grouped data.")
+    #                 result_df = result_df.sort_values(by=col, ascending=(direction == "asc"))
+
+    #         return result_df[selected_cols]
+
+    #     else:
+    #         # No GROUP BY → Normal projection after WHERE
+    #         if columns == ["*"]:
+    #             columns = table.columns
+    #             # print(records.head())
+    #             # return records
+
+    #         # Apply ORDER BY
+    #         if order_by:
+    #             for col, direction in order_by:
+    #                 if col not in records.columns:
+    #                     raise ValueError(f"Column '{col}' not found in records.")
+    #                 records = records.sort_values(by=col, ascending=(direction == "asc"))
+    #         print(records[columns])
+    #         return records[columns]
     def select_from_table(self, parsed_query):
-        """Handle SELECT queries with advanced conditions, GROUP BY, HAVING, and ORDER BY"""
         table_name = parsed_query["table_name"]
         columns = parsed_query["columns"]
+        join = parsed_query.get("join")
         conditions = parsed_query["conditions"]
         group_by = parsed_query.get("group_by", [])
         having = parsed_query.get("having", [])
         order_by = parsed_query.get("order_by", [])
 
-        # Ensure the table exists
+        # Load main table
         table_path = f"Project_ADBMS/databases/{self.db_name}/{table_name}.csv"
         if not os.path.exists(table_path):
             raise Exception(f"Table '{table_name}' does not exist!")
-
         table = FileStorageManager(self.db_name, table_name, self.index_manager)
-        records = table.select_records()
-        # print(records.head()) 
-        # return records # Pandas DataFrame
-        
+        df1 = table.select_records()
 
-        if records is None or records.empty:
-            return pd.DataFrame()  # Return empty DataFrame instead of None
+        if join:
+            df1.columns = [f"{table_name}.{col}" for col in table.columns]
+        else:
+            df1.columns = table.columns
 
-        # Apply WHERE conditions before grouping
+        # Handle JOIN logic
+        if join:
+            join_table = join["table"]
+            join_path = f"Project_ADBMS/databases/{self.db_name}/{join_table}.csv"
+            if not os.path.exists(join_path):
+                raise Exception(f"Join table '{join_table}' does not exist!")
+            join_storage = FileStorageManager(self.db_name, join_table, self.index_manager)
+            df2 = join_storage.select_records()
+            df2.columns = [f"{join_table}.{col}" for col in join_storage.columns]
+
+            left_expr, right_expr = [s.strip() for s in join["condition"].split("=")]
+            join_type = join["type"]
+
+            # Join logic
+            if join_type == "right":
+                records = pd.merge(df2, df1, left_on=right_expr, right_on=left_expr, how="left")
+            elif join_type == "full":
+                records = pd.merge(df1, df2, left_on=left_expr, right_on=right_expr, how="outer")
+            else:
+                records = pd.merge(df1, df2, left_on=left_expr, right_on=right_expr, how=join_type)
+        else:
+            records = df1.copy()
+
+        # Apply WHERE conditions
         if conditions:
             filtered = []
             for _, row in records.iterrows():
-                record_dict = row.to_dict()
-                if self.evaluate_conditions(record_dict, conditions):
-                    filtered.append(record_dict)
-            print(records.head())
+                if self.evaluate_conditions(row.to_dict(), conditions):
+                    filtered.append(row)
             records = pd.DataFrame(filtered)
 
-        # Return empty DataFrame if no records matched
         if records.empty:
             return pd.DataFrame()
-
-        # Ensure columns are correctly set after filtering
-        records.columns = table.columns
 
         # GROUP BY logic
         if group_by:
             agg_ops = {}
             selected_cols = list(group_by)
-
             for col in columns:
-                if "(" in col and ")" in col:
-                    func = col.split("(")[0].lower()
-                    field = col.split("(")[1].replace(")", "").strip()
+                if isinstance(col, dict):
+                    expr = col["expression"]
+                    alias = col["alias"]
+                else:
+                    expr = alias = col
 
-                    alias = f"{func}({field})"
-                    selected_cols.append(alias)
-
+                if "(" in expr and ")" in expr:
+                    func = expr.split("(")[0].lower()
+                    field = expr.split("(")[1].replace(")", "").strip()
                     if func == "count":
                         agg_ops[alias] = (field, 'count')
                     elif func == "sum":
@@ -594,46 +709,39 @@ class DatabaseManager:
                         agg_ops[alias] = (field, 'min')
                     elif func == "max":
                         agg_ops[alias] = (field, 'max')
-                elif col not in group_by:
-                    selected_cols.append(col)
+                    selected_cols.append(alias)
+                elif expr not in group_by:
+                    selected_cols.append(expr)
 
-            # Apply aggregation
             grouped = records.groupby(group_by)
             result_df = grouped.agg(**agg_ops).reset_index()
 
-            # Apply HAVING clause
+            # Apply HAVING
             if having:
-                filtered = []
-                for _, row in result_df.iterrows():
-                    record_dict = row.to_dict()
-                    if self.evaluate_conditions(record_dict, having):
-                        filtered.append(record_dict)
-                result_df = pd.DataFrame(filtered)
+                result_df = result_df[[row for _, row in result_df.iterrows()
+                                    if self.evaluate_conditions(row.to_dict(), having)]]
 
-            # Apply ORDER BY
-            if order_by:
-                for col, direction in order_by:
-                    if col not in result_df.columns:
-                        raise ValueError(f"Column '{col}' not found in grouped data.")
-                    result_df = result_df.sort_values(by=col, ascending=(direction == "asc"))
+            # ORDER BY
+            for col, direction in order_by:
+                result_df = result_df.sort_values(by=col, ascending=(direction == "asc"))
 
             return result_df[selected_cols]
 
+        # Without GROUP BY
+        if columns == ["*"]:
+            columns = list(records.columns)
         else:
-            # No GROUP BY → Normal projection after WHERE
-            if columns == ["*"]:
-                columns = table.columns
-                # print(records.head())
-                # return records
+            columns = [col["alias"] if isinstance(col, dict) else col for col in columns]
 
-            # Apply ORDER BY
-            if order_by:
-                for col, direction in order_by:
-                    if col not in records.columns:
-                        raise ValueError(f"Column '{col}' not found in records.")
-                    records = records.sort_values(by=col, ascending=(direction == "asc"))
-            print(records[columns])
-            return records[columns]
+        # ORDER BY
+        for col, direction in order_by:
+            if col not in records.columns:
+                raise ValueError(f"Column '{col}' not found in records.")
+            records = records.sort_values(by=col, ascending=(direction == "asc"))
+
+        return records[columns]
+
+
 
 
     def update_table(self, parsed_query):
