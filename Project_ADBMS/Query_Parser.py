@@ -165,11 +165,11 @@ class QueryParser:
         }
     @staticmethod
     def _parse_select(query: str) -> Dict:
-        """Parse SELECT query with INNER, LEFT, RIGHT, FULL JOIN support and advanced features"""
+        """Parse SELECT query with JOIN support including CROSS JOIN and advanced clauses"""
         pattern = (
             r"select\s+(.+?)\s+from\s+(\w+)"
             r"(?:\s+(?:as\s+)?(\w+))?"  # main table alias
-            r"(?:\s+(inner|left|right|full)\s+join\s+(\w+)(?:\s+(?:as\s+)?(\w+))?\s+on\s+([^\s]+?\s*=\s*[^\s]+?))?"  # JOIN
+            r"(?:\s+(inner|left|right|full|cross)\s+join\s+(\w+)(?:\s+(?:as\s+)?(\w+))?(?:\s+on\s+([^\s]+?\s*=\s*[^\s]+?))?)?"  # JOIN
             r"(?:\s+where\s+(.+?))?"
             r"(?:\s+group\s+by\s+(.+?))?"
             r"(?:\s+having\s+(.+?))?"
@@ -209,8 +209,8 @@ class QueryParser:
                 "type": join_type.lower() if join_type else None,
                 "table": join_table,
                 "alias": join_alias,
-                "condition": join_condition
-            } if join_table else None,
+                "condition": join_condition if join_type != "cross" else None
+            } if join_type else None,
             "conditions": QueryParser.parse_conditions(where_clause) if where_clause else [],
             "group_by": [g.strip() for g in group_by_clause.split(",")] if group_by_clause else [],
             "having": QueryParser.parse_conditions(having_clause) if having_clause else [],
@@ -218,7 +218,8 @@ class QueryParser:
                         for x in order_by_clause.split(",")] if order_by_clause else [],
             "limit": int(limit) if limit else None,
             "offset": int(offset) if offset else None
-        }
+    }
+
 
 
 

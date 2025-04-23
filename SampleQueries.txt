@@ -23,3 +23,5 @@ SELECT status, COUNT(*) AS total_ordersFROM orders GROUP BY status HAVING total_
 SELECT * FROM products LIMIT 2;
 SELECT * FROM products OFFSET 2;
 SELECT product_name, price FROM products WHERE price BETWEEN 200 AND 400
+
+SELECT products.product_name, orders.order_id, orders.status FROM products CROSS JOIN orders

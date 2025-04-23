@@ -663,18 +663,22 @@ class DatabaseManager:
             df2 = join_storage.select_records()
             df2.columns = [f"{join_table}.{col}" for col in join_storage.columns]
 
-            left_expr, right_expr = [s.strip() for s in join["condition"].split("=")]
             join_type = join["type"]
 
-            # Join logic
-            if join_type == "right":
-                records = pd.merge(df2, df1, left_on=right_expr, right_on=left_expr, how="left")
-            elif join_type == "full":
-                records = pd.merge(df1, df2, left_on=left_expr, right_on=right_expr, how="outer")
+            if join_type == "cross":
+                records = df1.merge(df2, how="cross")
             else:
-                records = pd.merge(df1, df2, left_on=left_expr, right_on=right_expr, how=join_type)
+                left_expr, right_expr = [s.strip() for s in join["condition"].split("=")]
+
+                if join_type == "right":
+                    records = pd.merge(df2, df1, left_on=right_expr, right_on=left_expr, how="left")
+                elif join_type == "full":
+                    records = pd.merge(df1, df2, left_on=left_expr, right_on=right_expr, how="outer")
+                else:
+                    records = pd.merge(df1, df2, left_on=left_expr, right_on=right_expr, how=join_type)
         else:
             records = df1.copy()
+
 
         # Apply WHERE conditions
         if conditions:
