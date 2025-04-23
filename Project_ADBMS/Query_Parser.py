@@ -436,7 +436,7 @@ class QueryParser:
         }
 
     @staticmethod
-    def parse_conditions(condition_str: str) -> List[List[Dict[str, Union[str, Tuple, List[str]]]]]:
+    def parse_conditions(condition_str: str) -> List[List[Dict[str, Union[str, Tuple, List[str], bool]]]]:
         """Parses a WHERE or HAVING condition string into nested AND/OR condition groups"""
         if not condition_str:
             return []
@@ -444,95 +444,87 @@ class QueryParser:
         condition_str = condition_str.strip()
         conditions = []
 
-        # Split top-level ORs
+        # Split by OR (top-level)
         or_blocks = [block.strip() for block in re.split(r"\s+or\s+", condition_str, flags=re.IGNORECASE)]
 
         for block in or_blocks:
             and_group = []
 
-            # Protect special clauses (BETWEEN, IN, LIKE, etc.)
+            # Match special clauses first: BETWEEN, IN, LIKE, IS
             protected = {
                 "between": list(re.finditer(r"(\w+)\s+between\s+([^ ]+)\s+and\s+([^ ]+)", block, re.IGNORECASE)),
-                "in": list(re.finditer(r"(\w+)\s+in\s*\(([^)]+)\)", block, re.IGNORECASE)),
-                "like": list(re.finditer(r"(\w+)\s+like\s+['\"](.+?)['\"]", block, re.IGNORECASE)),
-                "is": list(re.finditer(r"(\w+)\s+is\s+(?:not\s+)?(null|true|false)", block, re.IGNORECASE))
+                "in": list(re.finditer(r"(\w+)\s+not\s+in\s*\(([^)]+)\)", block, re.IGNORECASE)) +
+                    list(re.finditer(r"(\w+)\s+in\s*\(([^)]+)\)", block, re.IGNORECASE)),
+                "like": list(re.finditer(r"(\w+)\s+(not\s+)?like\s+['\"](.+?)['\"]", block, re.IGNORECASE)),
+                "is": list(re.finditer(r"(\w+)\s+is\s+(not\s+)?(null|true|false)", block, re.IGNORECASE)),
             }
 
-            # Replace protected clauses with placeholders
+            # Replace protected patterns with placeholders
             temp_block = block
             placeholders = {}
             for clause_type, matches in protected.items():
                 for i, match in enumerate(matches):
                     placeholder = f"__{clause_type.upper()}_{i}__"
                     placeholders[placeholder] = (clause_type, match)
-                    temp_block = temp_block.replace(match.group(0), placeholder)
+                    temp_block = re.sub(re.escape(match.group(0)), placeholder, temp_block, count=1)
 
-            # Split remaining AND conditions
+            # Now split by AND
             and_conditions = [cond.strip() for cond in re.split(r"\s+and\s+", temp_block, flags=re.IGNORECASE)]
 
             for cond in and_conditions:
-                if cond in placeholders:
-                    clause_type, match = placeholders[cond]
-                    if clause_type == "between":
-                        col, val1, val2 = match.groups()
-                        and_group.append({
-                            "column": col,
-                            "operator": "between",
-                            "value": (val1.strip("'\""), val2.strip("'\""))
-                        })
-                    elif clause_type == "in":
-                        col, values = match.groups()
-                        value_list = [v.strip().strip("'\"") for v in values.split(",")]
-                        and_group.append({
-                            "column": col,
-                            "operator": "in",
-                            "value": value_list
-                        })
-                    elif clause_type == "like":
-                        col, pattern = match.groups()
-                        and_group.append({
-                            "column": col,
-                            "operator": "like",
-                            "value": pattern
-                        })
-                    elif clause_type == "is":
-                        col, value = match.groups()
-                        and_group.append({
-                            "column": col,
-                            "operator": "is",
-                            "value": value.lower(),
-                            "not": "not" in match.group(0).lower()
-                        })
+                matched = False
+                for placeholder, (clause_type, match) in placeholders.items():
+                    if placeholder in cond:
+                        matched = True
+                        if clause_type == "between":
+                            col, val1, val2 = match.groups()
+                            and_group.append({
+                                "column": col,
+                                "operator": "between",
+                                "value": (val1.strip("'\""), val2.strip("'\""))
+                            })
+                        elif clause_type == "in":
+                            col, values = match.groups()
+                            is_not = "not in" in match.group(0).lower()
+                            value_list = [v.strip().strip("'\"") for v in values.split(",")]
+                            and_group.append({
+                                "column": col,
+                                "operator": "not in" if is_not else "in",
+                                "value": value_list
+                            })
+                        elif clause_type == "like":
+                            col, not_kw, pattern = match.groups()
+                            and_group.append({
+                                "column": col,
+                                "operator": "not like" if not_kw else "like",
+                                "value": pattern
+                            })
+                        elif clause_type == "is":
+                            col, not_kw, value = match.groups()
+                            and_group.append({
+                                "column": col,
+                                "operator": "is",
+                                "value": value.lower(),
+                                "not": bool(not_kw)
+                            })
+                        break
+                if matched:
                     continue
 
-                # Handle NOT conditions
-                not_match = re.match(r"not\s+\(?(.+?)\)?$", cond, re.IGNORECASE)
-                if not_match:
-                    inner = not_match.group(1).strip()
-                    nested = QueryParser.parse_conditions(inner)
-                    for c in nested[0]:
-                        c["not"] = True
-                        and_group.append(c)
-                    continue
-
-                # General comparison operators
+                # Try generic comparison
                 comp_match = re.match(
                     r"(\w+)\s*(=|!=|<>|>=|<=|>|<)\s*"
-                    r"((?:\w+\([^)]*\))|(?:'[^']*')|(?:\"[^\"]*\")|(?:\d+)|(?:null|true|false))",
+                    r"((?:\w+\([^)]*\))|(?:'[^']*')|(?:\"[^\"]*\")|(?:\d+\.?\d*)|(?:null|true|false))",
                     cond,
                     re.IGNORECASE
                 )
                 if comp_match:
                     col, op, val = comp_match.groups()
-                    # Clean up the value
                     val = val.strip("'\"")
                     if val.lower() in ("null", "true", "false"):
                         val = val.lower()
-                    elif val.isdigit():
-                        val = int(val)
                     elif val.replace(".", "", 1).isdigit():
-                        val = float(val)
-                    
+                        val = float(val) if "." in val else int(val)
                     and_group.append({
                         "column": col,
                         "operator": op.replace("<>", "!="),
@@ -540,9 +532,8 @@ class QueryParser:
                     })
                     continue
 
-                # If we get here, the condition wasn't parsed
                 raise ValueError(f"Could not parse condition: {cond}")
 
-            conditions.append(and_group if and_group else [])
+            conditions.append(and_group)
 
         return conditions

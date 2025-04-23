@@ -360,17 +360,6 @@ class DatabaseManager:
 
 
 
-                
-
-    
-
-
-
-
-
-
-
-
     def evaluate_conditions(self, record: dict, conditions: List[List[Dict]]) -> bool:
         """Evaluate OR-AND based conditions for a record"""
         for and_group in conditions:  # Each AND group is part of OR logic
@@ -380,20 +369,26 @@ class DatabaseManager:
 
     def evaluate_single_condition(self, record: dict, cond: Dict) -> bool:
         """Evaluate a single condition dict against a record"""
+        import re
+
         col = cond["column"]
         op = cond["operator"]
         val = cond["value"]
         record_val = record.get(col)
 
-        # Try to convert to numbers if applicable
-        try:
-            if isinstance(record_val, str) and record_val.replace(".", "", 1).isdigit():
-                record_val = float(record_val)
-            if isinstance(val, str) and val.replace(".", "", 1).isdigit():
-                val = float(val)
-        except Exception as e:
-            print(f"Error converting values for comparison: {e}")
-            return False  # If conversion fails, the condition is not met
+        def try_cast(value):
+            """Helper to convert value to float if numeric, else keep as is"""
+            try:
+                return float(value) if isinstance(value, str) and re.match(r'^-?\d+(\.\d+)?$', value.strip()) else value
+            except:
+                return value
+
+        # Clean and try casting both values
+        record_val = try_cast(record_val)
+        if isinstance(val, tuple):
+            val = tuple(try_cast(v) for v in val)
+        else:
+            val = try_cast(val)
 
         try:
             if op == "=":
@@ -401,31 +396,35 @@ class DatabaseManager:
             elif op == "!=":
                 return record_val != val
             elif op == ">":
-                return float(record_val) > float(val)
+                return record_val > val
             elif op == "<":
-                return float(record_val) < float(val)
+                return record_val < val
             elif op == ">=":
-                return float(record_val) >= float(val)
+                return record_val >= val
             elif op == "<=":
-                return float(record_val) <= float(val)
+                return record_val <= val
             elif op == "between" and isinstance(val, tuple) and len(val) == 2:
                 lower, upper = val
-                return lower <= float(record_val) <= upper
+                return lower <= record_val <= upper
             elif op == "in":
-                # Check if record_val is in the list of values
                 return str(record_val) in map(str, val)
             elif op == "not in":
-                # Check if record_val is NOT in the list of values
                 return str(record_val) not in map(str, val)
             elif op == "like":
-                # SQL LIKE → convert % to .* and _ to . in regex, perform case-insensitive match but keep case intact
                 import re
-                pattern = "^" + re.escape(val).replace(r"\%", ".*").replace(r"\_", ".") + "$"
+                # Convert SQL LIKE pattern to regex
+                pattern = "^" + val.replace('%', '.*').replace('_', '.') + "$"
                 return re.match(pattern, str(record_val), re.IGNORECASE) is not None
+            elif op == "not like":
+                import re
+                pattern = "^" + val.replace('%', '.*').replace('_', '.') + "$"
+                return re.match(pattern, str(record_val), re.IGNORECASE) is None
         except Exception as e:
             print(f"Condition evaluation error: {e}")
 
         return False
+
+
 
     
 
@@ -630,6 +629,7 @@ class DatabaseManager:
     #                 records = records.sort_values(by=col, ascending=(direction == "asc"))
     #         print(records[columns])
     #         return records[columns]
+
     def select_from_table(self, parsed_query):
         table_name = parsed_query["table_name"]
         columns = parsed_query["columns"]
@@ -638,6 +638,8 @@ class DatabaseManager:
         group_by = parsed_query.get("group_by", [])
         having = parsed_query.get("having", [])
         order_by = parsed_query.get("order_by", [])
+        limit = parsed_query.get("limit")
+        offset = parsed_query.get("offset")
 
         # Load main table
         table_path = f"Project_ADBMS/databases/{self.db_name}/{table_name}.csv"
@@ -689,6 +691,7 @@ class DatabaseManager:
         if group_by:
             agg_ops = {}
             selected_cols = list(group_by)
+            
             for col in columns:
                 if isinstance(col, dict):
                     expr = col["expression"]
@@ -699,8 +702,14 @@ class DatabaseManager:
                 if "(" in expr and ")" in expr:
                     func = expr.split("(")[0].lower()
                     field = expr.split("(")[1].replace(")", "").strip()
+
+                    # Handle COUNT(*) and others
                     if func == "count":
-                        agg_ops[alias] = (field, 'count')
+                        if field == "*":
+                            sample_col = records.columns[0]
+                            agg_ops[alias] = (sample_col, 'count')
+                        else:
+                            agg_ops[alias] = (field, 'count')
                     elif func == "sum":
                         agg_ops[alias] = (field, 'sum')
                     elif func == "avg":
@@ -709,6 +718,7 @@ class DatabaseManager:
                         agg_ops[alias] = (field, 'min')
                     elif func == "max":
                         agg_ops[alias] = (field, 'max')
+
                     selected_cols.append(alias)
                 elif expr not in group_by:
                     selected_cols.append(expr)
@@ -716,14 +726,24 @@ class DatabaseManager:
             grouped = records.groupby(group_by)
             result_df = grouped.agg(**agg_ops).reset_index()
 
-            # Apply HAVING
+            # HAVING
             if having:
-                result_df = result_df[[row for _, row in result_df.iterrows()
-                                    if self.evaluate_conditions(row.to_dict(), having)]]
+                filtered = []
+                for _, row in result_df.iterrows():
+                    row_dict = row.to_dict()
+                    if self.evaluate_conditions(row_dict, having):
+                        filtered.append(row)
+                result_df = pd.DataFrame(filtered)
 
             # ORDER BY
             for col, direction in order_by:
                 result_df = result_df.sort_values(by=col, ascending=(direction == "asc"))
+
+            # LIMIT and OFFSET
+            if limit:
+                result_df = result_df.head(limit)
+            if offset:
+                result_df = result_df.iloc[offset:]
 
             return result_df[selected_cols]
 
@@ -733,13 +753,23 @@ class DatabaseManager:
         else:
             columns = [col["alias"] if isinstance(col, dict) else col for col in columns]
 
-        # ORDER BY
+        # ORDER BY logic
         for col, direction in order_by:
             if col not in records.columns:
                 raise ValueError(f"Column '{col}' not found in records.")
             records = records.sort_values(by=col, ascending=(direction == "asc"))
 
+        # LIMIT and OFFSET
+        if limit:
+            records = records.head(limit)
+        if offset:
+            records = records.iloc[offset:]
+        
+        print(records[columns])
+
         return records[columns]
+
+
 
 
 

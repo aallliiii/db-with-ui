@@ -1,0 +1,25 @@
+---Remove Semicolon from the end of the line---
+
+
+SELECT * FROM products WHERE product_name LIKE 'Smart%'
+SELECT * FROM customers WHERE customer_name LIKE 'D%';
+SELECT * FROM customers WHERE email NOT LIKE '%.com';
+SELECT * FROM products WHERE price BETWEEN 400 AND 900;
+SELECT * FROM orders WHERE customer_id NOT IN (101, 104);
+SELECT * FROM orders WHERE status = 'completed' AND order_date BETWEEN '2025-01-01' AND '2025-04-01';
+
+SELECT * FROM customers WHERE customer_name LIKE 'A%
+
+
+SELECT order_id, customer_id, status FROM orders ORDER BY status ASC, customer_id DESC;
+SELECT order_id, customer_id, order_date FROM orders ORDER BY order_date DESC;
+SELECT order_id, customer_id, order_date FROM orders ORDER BY order_date ASC;
+SELECT status, COUNT(order_id) AS total_orders FROM orders GROUP BY status HAVING total_orders > 1;
+SELECT status, COUNT(order_id) AS total_orders FROM orders GROUP BY status;
+SELECT status, COUNT(order_id) AS total_orders FROM orders GROUP BY status HAVING total_orders > 1 ORDER BY total_orders DESC
+SELECT status, COUNT(order_id) AS total_orders FROM orders GROUP BY status HAVING total_orders >=1 ORDER BY total_orders DESC
+SELECT customer_id, COUNT(order_id) AS total_orders FROM orders GROUP BY customer_id HAVING total_orders >=1 ORDER BY total_orders DESC
+SELECT status, COUNT(*) AS total_ordersFROM orders GROUP BY status HAVING total_orders > 1 ORDER BY total_orders DESC
+SELECT * FROM products LIMIT 2;
+SELECT * FROM products OFFSET 2;
+SELECT product_name, price FROM products WHERE price BETWEEN 200 AND 400
