@@ -24,4 +24,10 @@ SELECT * FROM products LIMIT 2;
 SELECT * FROM products OFFSET 2;
 SELECT product_name, price FROM products WHERE price BETWEEN 200 AND 400
 
+
+SELECT products.product_name, order_items.order_id, order_items.quantity FROM products LEFT JOIN order_items ON products.product_id = order_items.product_id
+SELECT products.product_name, order_items.order_id, order_items.quantity FROM products FULL JOIN order_items ON products.product_id = order_items.product_id
+SELECT orders.order_id, customers.customer_name, orders.order_date FROM orders INNER JOIN customers ON orders.customer_id = customers.customer_id
+SELECT customers.customer_name, orders.order_id, orders.order_date FROM orders RIGHT JOIN customers ON orders.customer_id = customers.customer_id
+
 SELECT products.product_name, orders.order_id, orders.status FROM products CROSS JOIN orders
